@@ -1,30 +1,56 @@
+import {service} from '@loopback/core';
 import {
   Count,
   CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
-  response,
+  del, get,
+  getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
+  response
 } from '@loopback/rest';
-import {Usuario} from '../models';
+import {Llaves} from '../config/llaves';
+import {Credenciales, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
+import {AutenticacionService} from '../services';
+const fetch = require('node-fetch')
+
 
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
     public usuarioRepository : UsuarioRepository,
+    @service(AutenticacionService)
+    public servicioAutenticacion: AutenticacionService,
   ) {}
+
+  //Metodo de identificacion de usuarios
+  @post("/identificarUsuario",{
+    responses:{
+      '200':{
+        description: "Identificacion de usuarios"
+      }
+    }
+  })
+ async identificarUsuario(@requestBody() credenciales:Credenciales) {
+  let u = await this.servicioAutenticacion.IdentificacionUsuario(credenciales.usuario, credenciales.clave);
+  if(u){
+    let token = this.servicioAutenticacion.GenerarTokenJWT(u);
+    return{
+      datos:{
+        nombre: u.nombres,
+        email: u.email,
+        id: u.id
+      },
+      tk: token
+    }
+  }else{
+    throw new HttpErrors[401]("Datos inválidos");
+  }
+ }
 
   @post('/usuarios')
   @response(200, {
@@ -44,7 +70,18 @@ export class UsuarioController {
     })
     usuario: Omit<Usuario, 'id'>,
   ): Promise<Usuario> {
-    return this.usuarioRepository.create(usuario);
+    let clave = this.servicioAutenticacion.GeneralClave();
+    let claveCifrada = this.servicioAutenticacion.CifrarCalve(clave);
+    usuario.clave = claveCifrada;
+    let u = await this.usuarioRepository.create(usuario);
+    let destino = usuario.email;
+    let asunto = 'Registro de la plataforma';
+    let contenido = `hola ${usuario.nombres}, su nombre de usuario es : ${usuario.email} y su contraseña es: ${usuario.clave}`;
+    fetch(`${Llaves.urlServicioNotificaciones}/envio-email?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
+      .then((data: any)=>{
+        console.log(data);
+      })
+    return u;
   }
 
   @get('/usuarios/count')
