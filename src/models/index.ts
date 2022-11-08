@@ -6,3 +6,4 @@ export * from './atracciones.model';
 export * from './puesto-de-comidas.model';
 export * from './departamento.model';
 export * from './ciudad.model';
+export * from './credenciales.model';
