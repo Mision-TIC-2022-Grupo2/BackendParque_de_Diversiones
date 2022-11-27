@@ -1,0 +1,23 @@
+<a routerLink="/administracion/crear-compras" class="btn">Nuevo Atraccion</a>
+<table class="table response">
+    <thead>
+        <th>Nombre</th>
+        <th>Imagen</th>
+        <th>Estatura Mimina</th>
+        <th>Video</th>
+        <th>Descripcion</th>
+        <th>Editar</th>
+    </thead>
+<tbody>
+    <tr *ngFor="let p of listadoRegistros">
+        <td>{{p.nombre}}</td>
+        <td>{{p.imagen}}</td>
+        <td>{{p.estatura_min}}</td>
+        <td>{{p.video}}</td>
+        <td>{{p.descripcion}}</td>
+<td>
+    <a routerLink="/administracion/editar-compras/{{p.id}}" class="btn">Editar Atraccion</a>
+</td>
+    </tr>
+</tbody>
+</table>
